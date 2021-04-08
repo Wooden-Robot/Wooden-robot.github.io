@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="icon" type="image/png" sizes="32x32" href="/uploads/8bit.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/uploads/8bit.png">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"woodenrobot.me","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"mac"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":true,"nav":{"disqus":{"text":"Disqus","order":-2},"gitalk":{"text":"Gitalk","order":-1}},"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":5,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="部署 Seafile 服务器本文档用来说明通过预编译好的安装包来安装并运行基于 MySQL&#x2F;MariaDB 的 Seafile 服务器。(MariaDB 是 MySQL 的分支)">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ubuntu 搭建 Seafile">
+<meta property="og:url" content="https://woodenrobot.me/2018/09/08/Ubuntu-%E6%90%AD%E5%BB%BA-Seafile/index.html">
+<meta property="og:site_name" content="WoodenRobot&#39;s Blog">
+<meta property="og:description" content="部署 Seafile 服务器本文档用来说明通过预编译好的安装包来安装并运行基于 MySQL&#x2F;MariaDB 的 Seafile 服务器。(MariaDB 是 MySQL 的分支)">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://woodenrobot.me/images/Server-setup-successfully.png">
+<meta property="og:image" content="https://woodenrobot.me/images/newifi_config.png">
+<meta property="og:image" content="https://woodenrobot.me/images/newifi_host.png">
+<meta property="og:image" content="https://woodenrobot.me/images/dns_config.png">
+<meta property="og:image" content="https://woodenrobot.me/images/dns_address.png">
+<meta property="article:published_time" content="2018-09-08T15:27:44.000Z">
+<meta property="article:modified_time" content="2021-04-08T02:34:29.650Z">
+<meta property="article:author" content="WoodenRobot">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="Seafile">
+<meta property="article:tag" content="Ubuntu">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://woodenrobot.me/images/Server-setup-successfully.png">
+
+<link rel="canonical" href="https://woodenrobot.me/2018/09/08/Ubuntu-%E6%90%AD%E5%BB%BA-Seafile/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Ubuntu 搭建 Seafile | WoodenRobot's Blog</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85052923-1"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-85052923-1');
+      }
+    </script>
+
+
+  <script>
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?f6877c80d4354214ca22c266ee5fbdcf";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="WoodenRobot's Blog" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">WoodenRobot's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-rss">
+
+    <a href="/atom.xml" rel="section"><i class="fa fa-rss fa-fw"></i>RSS</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+  <div class="reading-progress-bar"></div>
+
+  <a href="https://github.com/Wooden-Robot" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://woodenrobot.me/2018/09/08/Ubuntu-%E6%90%AD%E5%BB%BA-Seafile/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/8bit.png">
+      <meta itemprop="name" content="WoodenRobot">
+      <meta itemprop="description" content="Life is short, should be fun!">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="WoodenRobot's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Ubuntu 搭建 Seafile
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-09-08 23:27:44" itemprop="dateCreated datePublished" datetime="2018-09-08T23:27:44+08:00">2018-09-08</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2018/09/08/Ubuntu-%E6%90%AD%E5%BB%BA-Seafile/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2018/09/08/Ubuntu-搭建-Seafile/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="部署-Seafile-服务器"><a href="#部署-Seafile-服务器" class="headerlink" title="部署 Seafile 服务器"></a>部署 Seafile 服务器</h1><p>本文档用来说明通过预编译好的安装包来安装并运行基于 MySQL/MariaDB 的 Seafile 服务器。(MariaDB 是 MySQL 的分支)</p>
+<span id="more"></span>
+
+<h2 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h2><p>到<a target="_blank" rel="noopener" href="http://www.seafile.com/download">下载页面</a>下载最新的服务器安装包.</p>
+<h2 id="部署和目录设计"><a href="#部署和目录设计" class="headerlink" title="部署和目录设计"></a>部署和目录设计</h2><p>下载 seafile-server_6.2.5_* 到你的<br><strong>/home/username</strong> 目录下。 建议这样的目录结构:</p>
+<pre><code>mkdir seafile
+mv seafile-server_* seafile
+cd seafile
+#将 seafile-server_* 移动到 seafile 目录下后
+tar -xzf seafile-server_*
+mkdir installed
+mv seafile-server_* installed
+</code></pre>
+<p>现在，你的目录看起来应该像这样：</p>
+<pre><code>#tree seafile -L 2
+seafile
+├── installed
+│   └── seafile-server_xxxx.tar.gz
+└── seafile-server-xxx
+    ├── reset-admin.sh
+    ├── runtime
+    ├── seafile
+    ├── seafile.sh
+    ├── seahub
+    ├── seahub.sh
+    ├── setup-seafile.sh
+    └── upgrade
+</code></pre>
+<p><strong>这样设计目录的好处在于</strong></p>
+<ul>
+<li>  和 seafile 相关的配置文件都可以放在 <strong>seafile</strong> 目录下，便于集中管理.</li>
+<li>  后续升级时,你只需要解压最新的安装包到 <strong>seafile</strong> 目录下.</li>
+</ul>
+<h2 id="安装-Seafile-服务器"><a href="#安装-Seafile-服务器" class="headerlink" title="安装 Seafile 服务器"></a>安装 Seafile 服务器</h2><h3 id="安装前的准备工作"><a href="#安装前的准备工作" class="headerlink" title="安装前的准备工作"></a>安装前的准备工作</h3><p>安装 Seafile 服务器之前，请确认已安装以下软件</p>
+<ul>
+<li>MariaDB 或者 MySQL 服务器 (MariaDB 是 MySQL 的分支)</li>
+<li>python 2.7 (从 Seafile 5.1 开始，python 版本最低要求为2.7）</li>
+<li>python-setuptools</li>
+<li>python-imaging</li>
+<li>python-mysqldb</li>
+<li>python-ldap</li>
+<li>python-urllib3</li>
+<li>python-memcache (或者 python-memcached)</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"># on Debian&#x2F;Ubuntu 14.04 server</span><br><span class="line">apt-get update</span><br><span class="line">apt-get install python2.7 libpython2.7 python-setuptools python-imaging \</span><br><span class="line">  python-ldap python-mysqldb python-memcache python-urllib3</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># on Ubuntu 16.04 server</span><br><span class="line"># As the default python binary on Ubuntu 16.04 server is python 3, we need to install python (python 2) first.</span><br><span class="line">apt-get update</span><br><span class="line">apt-get install python</span><br><span class="line">apt-get install python2.7 libpython2.7 python-setuptools python-imaging python-ldap python-urllib3 ffmpeg python-pip python-mysqldb python-memcache</span><br><span class="line">pip install pillow moviepy</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># on CentOS 7</span><br><span class="line">yum -y install epel-release</span><br><span class="line">rpm --import http:&#x2F;&#x2F;li.nux.ro&#x2F;download&#x2F;nux&#x2F;RPM-GPG-KEY-nux.ro</span><br><span class="line">yum -y install python-imaging MySQL-python python-memcached python-ldap python-urllib3 ffmpeg ffmpeg-devel</span><br><span class="line">pip install pillow moviepy</span><br></pre></td></tr></table></figure>
+
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><pre><code>cd seafile-server-*
+./setup-seafile-mysql.sh  #运行安装脚本并回答预设问题
+</code></pre>
+<p>如果你的系统中没有安装上面的某个软件，那么 Seafile初始化脚本会提醒你安装相应的软件包.</p>
+<p>该脚本会依次询问你一些问题，从而一步步引导你配置 Seafile 的各项参数:</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>seafile server name</td>
+<td>seafile 服务器的名字，目前该配置已经不再使用</td>
+<td>3 ~ 15 个字符，可以用英文字母，数字，下划线</td>
+</tr>
+<tr>
+<td>seafile server ip or domain</td>
+<td>seafile 服务器的 IP 地址或者域名</td>
+<td>客户端将通过这个 IP 或者地址来访问你的 Seafile 服务</td>
+</tr>
+<tr>
+<td>seafile data dir</td>
+<td>seafile 数据存放的目录，用上面的例子，默认将是 /data/haiwen/seafile-data</td>
+<td>seafile 数据将随着使用而逐渐增加，请把它放在一个有足够大空闲空间的分区上</td>
+</tr>
+<tr>
+<td>seafile fileserver port</td>
+<td>seafile fileserver 使用的 TCP 端口</td>
+<td>该端口用于文件同步，请使用默认的 8082，不能更改。</td>
+</tr>
+</tbody></table>
+<p>在这里, 你会被要求选择一种创建 Seafile 数据库的方式:</p>
+<pre><code>-------------------------------------------------------
+Please choose a way to initialize seafile databases:
+-------------------------------------------------------
+
+[1] Create new ccnet/seafile/seahub databases
+[2] Use existing ccnet/seafile/seahub databases
+</code></pre>
+<ul>
+<li>  如果选择<code>1</code>, 你需要提供根密码. 脚本程序会创建数据库和用户。</li>
+<li>  如果选择<code>2</code>, ccnet/seafile/seahub 数据库应该已经被你（或者其他人）提前创建。</li>
+</ul>
+<p>如果安装正确完成，你会看到下面这样的输出 (新版本可能会有所不同)</p>
+<p><img src="/images/Server-setup-successfully.png" alt="server-setup-succesfully"></p>
+<p>现在你的目录结构看起来应该是这样:</p>
+<pre><code>#tree seafile -L 2
+seafile
+├── conf                # configuration files
+│   ├── ccnet.conf
+│   └── seafile.conf
+│   └── seahub_settings.py
+│   └── seafdav.conf
+├── ccnet
+│   ├── mykey.peer
+│   ├── PeerMgr
+│   └── seafile.ini
+├── installed
+│   └── seafile-server_xxx.tar.gz
+├── seafile-data
+├── seafile-server-xxx  # active version
+│   ├── reset-admin.sh
+│   ├── runtime
+│   ├── seafile
+│   ├── seafile.sh
+│   ├── seahub
+│   ├── seahub.sh
+│   ├── setup-seafile.sh
+│   └── upgrade
+├── seafile-server-latest  # symbolic link to seafile-server-xxx
+├── seahub-data
+│   └── avatars
+</code></pre>
+<p><code>seafile-server-latest</code>文件夹为指向当前 Seafile 服务器文件夹的符号链接.<br>将来你升级到新版本后, 升级脚本会自动更新使其始终指向最新的 Seafile 服务器文件夹.</p>
+<h2 id="启动-Seafile-服务器"><a href="#启动-Seafile-服务器" class="headerlink" title="启动 Seafile 服务器"></a>启动 Seafile 服务器</h2><h3 id="启动-Seafile-服务器和-Seahub-网站"><a href="#启动-Seafile-服务器和-Seahub-网站" class="headerlink" title="启动 Seafile 服务器和 Seahub 网站"></a>启动 Seafile 服务器和 Seahub 网站</h3><p>在 seafile-server-xxx 目录下，运行如下命令</p>
+<ul>
+<li>  启动 Seafile:</li>
+</ul>
+<!-- -->
+
+<pre><code>./seafile.sh start # 启动 Seafile 服务
+</code></pre>
+<ul>
+<li>  启动 Seahub</li>
+</ul>
+<!-- -->
+
+<pre><code>./seahub.sh start &lt;port&gt;  # 启动 Seahub 网站 （默认运行在8000端口上）
+</code></pre>
+<p><strong>小贴士:</strong> 你第一次启动 seahub 时，<code>seahub.sh</code> 脚本会提示你创建一个 seafile 管理员帐号。</p>
+<p>服务启动后, 打开浏览器并输入以下地址</p>
+<pre><code>http://192.168.1.111:8000/
+</code></pre>
+<p>你会被重定向到登陆页面. 输入管理员用户名和密码即可。</p>
+<p><strong>恭喜!</strong> 现在你已经成功的安装了 Seafile 服务器.</p>
+<h3 id="在另一端口上运行-Seahub"><a href="#在另一端口上运行-Seahub" class="headerlink" title="在另一端口上运行 Seahub"></a>在另一端口上运行 Seahub</h3><p>如果你不想在默认的 8000 端口上运行 Seahub, 而是想自定义端口（比如8001）中运行，请按以下步骤操作:</p>
+<ul>
+<li>  关闭 Seafile 服务器</li>
+</ul>
+<!-- -->
+
+<pre><code>./seahub.sh stop # 停止 Seafile 进程
+./seafile.sh stop # 停止 Seahub
+</code></pre>
+<ul>
+<li>  更改<code>haiwen/conf/ccnet.conf</code>文件中<code>SERVICE_URL</code> 的值(假设你的 ip 或者域名是<code>192.168.0.190</code>), 如下 (从 5.0 版本开始，可以直接在管理员界面中设置。注意，如果同时在 Web 界面和配置文件中设置了这个值，以 Web 界面的配置为准。):</li>
+</ul>
+<!-- -->
+
+<pre><code>SERVICE_URL = http://192.168.0.190:8001
+</code></pre>
+<ul>
+<li>  重启 Seafile 服务器</li>
+</ul>
+<!-- -->
+
+<pre><code>./seafile.sh start # 启动 Seafile 服务
+./seahub.sh start 8001 # 启动 Seahub 网站 （运行在8001端口上）
+</code></pre>
+<h2 id="关闭-重启-Seafile-和-Seahub"><a href="#关闭-重启-Seafile-和-Seahub" class="headerlink" title="关闭/重启 Seafile 和 Seahub"></a>关闭/重启 Seafile 和 Seahub</h2><h3 id="关闭"><a href="#关闭" class="headerlink" title="关闭"></a>关闭</h3><pre><code>./seahub.sh stop # 停止 Seahub
+./seafile.sh stop # 停止 Seafile 进程
+</code></pre>
+<h3 id="重启"><a href="#重启" class="headerlink" title="重启"></a>重启</h3><pre><code>./seafile.sh restart # 停止当前的 Seafile 进程，然后重启 Seafile
+./seahub.sh restart  # 停止当前的 Seahub 进程，并在 8000 端口重新启动 Seahub
+</code></pre>
+<h3 id="如果停止-重启的脚本运行失败"><a href="#如果停止-重启的脚本运行失败" class="headerlink" title="如果停止/重启的脚本运行失败"></a>如果停止/重启的脚本运行失败</h3><p>大多数情况下 seafile.sh seahub.sh 脚本可以正常工作。如果遇到问题：</p>
+<ul>
+<li>  使用<strong>pgrep</strong>命令检查 seafile/seahub 进程是否还在运行中</li>
+</ul>
+<!-- -->
+
+<pre><code>pgrep -f seafile-controller # 查看 Seafile 进程
+pgrep -f &quot;seahub&quot; # 查看 Seahub 进程
+</code></pre>
+<ul>
+<li>  使用<strong>pkill</strong>命令杀掉相关进程</li>
+</ul>
+<!-- -->
+
+<pre><code>pkill -f seafile-controller # 结束 Seafile 进程
+pkill -f &quot;seahub&quot; # 结束 Seafile 进程
+</code></pre>
+<h2 id="Seafile-其他相关信息"><a href="#Seafile-其他相关信息" class="headerlink" title="Seafile 其他相关信息"></a>Seafile 其他相关信息</h2><h3 id="开机自启"><a href="#开机自启" class="headerlink" title="开机自启"></a>开机自启</h3><p>使用 crontab 的 @reboot 设置开机自启，<code>crontab -e</code> 进去编辑页面添加：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">@reboot &#x2F;home&#x2F;username&#x2F;seafile&#x2F;seafile-server-latest&#x2F;seafile.sh start &amp;&amp; &#x2F;home&#x2F;username&#x2F;seafile&#x2F;seafile-server-latest&#x2F;seahub.sh start 8001</span><br></pre></td></tr></table></figure>
+<h3 id="每天自动备份数据库"><a href="#每天自动备份数据库" class="headerlink" title="每天自动备份数据库"></a>每天自动备份数据库</h3><p>备份脚本位于 <code>/home/username/seafile/backup</code> 文件夹中，内容如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;bin&#x2F;bash</span><br><span class="line"></span><br><span class="line">user&#x3D;&#123;数据库用户名&#125;</span><br><span class="line">pass&#x3D;&#123;密码&#125;</span><br><span class="line">datetime&#x3D;&#96;date +&quot;%Y-%m-%d-%H-%M-%S&quot;&#96;</span><br><span class="line"></span><br><span class="line">mysqldump -u $user -p$pass --opt ccnet-db &gt; &#x2F;home&#x2F;username&#x2F;seafile&#x2F;backup&#x2F;databases&#x2F;ccnet&#x2F;ccnet-db.sql.$datetime</span><br><span class="line">mysqldump -u $user -p$pass --opt seafile-db &gt; &#x2F;home&#x2F;username&#x2F;seafile&#x2F;backup&#x2F;databases&#x2F;seafile&#x2F;seafile-db.sql.$datetime</span><br><span class="line">mysqldump -u $user -p$pass --opt seahub-db &gt; &#x2F;home&#x2F;username&#x2F;seafile&#x2F;backup&#x2F;databases&#x2F;seahub&#x2F;seahub-db.sql.$datetime</span><br></pre></td></tr></table></figure>
+<p>在 crontab 设置定时任务每天自动备份数据库：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">0 1 * * * bash &#x2F;home&#x2F;username&#x2F;seafile&#x2F;backup&#x2F;databases&#x2F;seafile_backup.sh 2&gt;&amp;1 &amp;</span><br></pre></td></tr></table></figure>
+<h3 id="恢复备份数据库"><a href="#恢复备份数据库" class="headerlink" title="恢复备份数据库"></a>恢复备份数据库</h3><p>在 <code>/home/username/seafile/backup/databases</code> 文件夹下有三个文件夹 <code>ccnet</code>、<code>seafile</code>、<code>seahub</code>分别储存不同库的备份数据，需要依次恢复三个数据库数据：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mysql -u[username] -p[password] ccnet-db &lt; ccnet-db.sql.2013-10-19-16-00-05</span><br><span class="line">mysql -u[username] -p[password] seafile-db &lt; seafile-db.sql.2013-10-19-16-00-20</span><br><span class="line">mysql -u[username] -p[password] seahub-db &lt; seahub-db.sql.2013-10-19-16-01-05</span><br></pre></td></tr></table></figure>
+
+<h3 id="Nginx-反向代理外网访问"><a href="#Nginx-反向代理外网访问" class="headerlink" title="Nginx 反向代理外网访问"></a>Nginx 反向代理外网访问</h3><p>首先需要有一台有公网 IP 的服务器，然后用 OpenVPN 搭建 VPN 网络，为内网机器分配 IP：<code>10.8.0.190</code>。详细方法参考：<a href="http://woodenrobot.me/2018/08/11/Ubuntu-%E6%9E%B6%E8%AE%BE-OpenVPN-%E5%AE%9E%E7%8E%B0%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F/">Ubuntu 架设 OpenVPN 实现内网穿透</a></p>
+<ol>
+<li><p>在 Seafile 所在机器添加以下 Nginx 配置进行反向代理，使得内网访问 192.168.0.190 即可访问 Seafile 主页：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name 192.168.0.190 10.8.0.190 seafile.xxx.xxx;</span><br><span class="line"></span><br><span class="line">    location &#x2F; &#123;</span><br><span class="line">        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">        proxy_set_header Host $host;</span><br><span class="line">        proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">        proxy_pass http:&#x2F;&#x2F;192.168.0.190:8001;</span><br><span class="line">        proxy_redirect default;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>在有公网 IP 机器上添加以下 Nginx 配置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    listen 80;</span><br><span class="line">    server_name seafile.xxxx.xxx;</span><br><span class="line"></span><br><span class="line">    location &#x2F; &#123;</span><br><span class="line">        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">        proxy_set_header Host $host;</span><br><span class="line">        proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">        proxy_pass http:&#x2F;&#x2F;10.8.0.190;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line">    listen 8082;</span><br><span class="line">    server_name seafile.xxx.xxx;</span><br><span class="line"></span><br><span class="line">    location &#x2F; &#123;</span><br><span class="line">        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">        proxy_set_header Host $host;</span><br><span class="line">        proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">        proxy_pass http:&#x2F;&#x2F;10.8.0.190:8082;</span><br><span class="line">        proxy_redirect default;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="域名内网访问走内网"><a href="#域名内网访问走内网" class="headerlink" title="域名内网访问走内网"></a>域名内网访问走内网</h3></li>
+<li><p>首先需要使用 Padavan 老毛子路由器系统；</p>
+</li>
+<li><p>进入路由器后台打开 <code>内部网络 (LAN) - DHCP 服务器</code>;<br><img src="/images/newifi_config.png" alt="Alt text"></p>
+</li>
+<li><p>添加路由器 hosts 规则并设置路由器 DNS 地址，并点击应用本页面设置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">192.168.0.190  seafile.xxx.xxx</span><br></pre></td></tr></table></figure>
+<p><img src="/images/newifi_host.png" alt="Alt text"><br><img src="/images/dns_config.png" alt="Alt text"></p>
+</li>
+<li><p>进入 <code>广告屏蔽功能 - Adbyby</code>，启用 Adbyby 功能并开启重定向 DNS，重定向地址设为 <code>192.168.0.1</code>:<br><img src="/images/dns_address.png" alt="Alt text"></p>
+<h3 id="修复更换头像-Bug"><a href="#修复更换头像-Bug" class="headerlink" title="修复更换头像 Bug"></a>修复更换头像 Bug</h3><p>更换头像接口报错，无法打开主页。修复方法：<br>首先安装 libjpeg8-dev，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ sudo apt install libjpeg8-dev</span><br></pre></td></tr></table></figure>
+<p>然后更新 python Pillow 库为最新版</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo pip install Pillow</span><br></pre></td></tr></table></figure></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div></div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/%E8%B5%9E%E8%B5%8Fwechat.jpg" alt="WoodenRobot 微信支付">
+        <p>微信支付</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/%E6%89%93%E8%B5%8FIMG_20161001_162637.jpg" alt="WoodenRobot 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>WoodenRobot
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://woodenrobot.me/2018/09/08/Ubuntu-%E6%90%AD%E5%BB%BA-Seafile/" title="Ubuntu 搭建 Seafile">https://woodenrobot.me/2018/09/08/Ubuntu-搭建-Seafile/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+        
+
+  <div class="followme">
+    <p>欢迎关注我的其它发布渠道</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/uploads/weixin_code.png">
+            <span class="icon">
+              <i class="fab fa-weixin"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+        </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Linux/" rel="tag"># Linux</a>
+              <a href="/tags/Seafile/" rel="tag"># Seafile</a>
+              <a href="/tags/Ubuntu/" rel="tag"># Ubuntu</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/09/05/Ubuntu-%E4%BD%BF%E7%94%A8-Docker-%E5%AE%89%E8%A3%85-Gitlab/" rel="prev" title="Ubuntu 使用 Docker 安装 Gitlab">
+      <i class="fa fa-chevron-left"></i> Ubuntu 使用 Docker 安装 Gitlab
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/10/16/Docker-compose-%E5%AE%89%E8%A3%85-PostgreSQL-%E5%92%8C-MySQL/" rel="next" title="Docker compose 安装 PostgreSQL 和 MySQL">
+      Docker compose 安装 PostgreSQL 和 MySQL <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+      <div class="tabs tabs-comment">
+        <ul class="nav-tabs">
+            <li class="tab"><a href="#comment-disqus">Disqus</a></li>
+            <li class="tab"><a href="#comment-gitalk">Gitalk</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane disqus" id="comment-disqus">
+              
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+            </div>
+            <div class="tab-pane gitalk" id="comment-gitalk">
+              <div class="comments" id="gitalk-container"></div>
+            </div>
+        </div>
+      </div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2-Seafile-%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">1.</span> <span class="nav-text">部署 Seafile 服务器</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%8B%E8%BD%BD"><span class="nav-number">1.1.</span> <span class="nav-text">下载</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%83%A8%E7%BD%B2%E5%92%8C%E7%9B%AE%E5%BD%95%E8%AE%BE%E8%AE%A1"><span class="nav-number">1.2.</span> <span class="nav-text">部署和目录设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-Seafile-%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">1.3.</span> <span class="nav-text">安装 Seafile 服务器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85%E5%89%8D%E7%9A%84%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="nav-number">1.3.1.</span> <span class="nav-text">安装前的准备工作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85"><span class="nav-number">1.3.2.</span> <span class="nav-text">安装</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8-Seafile-%E6%9C%8D%E5%8A%A1%E5%99%A8"><span class="nav-number">1.4.</span> <span class="nav-text">启动 Seafile 服务器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8-Seafile-%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%92%8C-Seahub-%E7%BD%91%E7%AB%99"><span class="nav-number">1.4.1.</span> <span class="nav-text">启动 Seafile 服务器和 Seahub 网站</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E5%8F%A6%E4%B8%80%E7%AB%AF%E5%8F%A3%E4%B8%8A%E8%BF%90%E8%A1%8C-Seahub"><span class="nav-number">1.4.2.</span> <span class="nav-text">在另一端口上运行 Seahub</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E9%97%AD-%E9%87%8D%E5%90%AF-Seafile-%E5%92%8C-Seahub"><span class="nav-number">1.5.</span> <span class="nav-text">关闭&#x2F;重启 Seafile 和 Seahub</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%97%AD"><span class="nav-number">1.5.1.</span> <span class="nav-text">关闭</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%87%8D%E5%90%AF"><span class="nav-number">1.5.2.</span> <span class="nav-text">重启</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E6%9E%9C%E5%81%9C%E6%AD%A2-%E9%87%8D%E5%90%AF%E7%9A%84%E8%84%9A%E6%9C%AC%E8%BF%90%E8%A1%8C%E5%A4%B1%E8%B4%A5"><span class="nav-number">1.5.3.</span> <span class="nav-text">如果停止&#x2F;重启的脚本运行失败</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Seafile-%E5%85%B6%E4%BB%96%E7%9B%B8%E5%85%B3%E4%BF%A1%E6%81%AF"><span class="nav-number">1.6.</span> <span class="nav-text">Seafile 其他相关信息</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%80%E6%9C%BA%E8%87%AA%E5%90%AF"><span class="nav-number">1.6.1.</span> <span class="nav-text">开机自启</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%AF%8F%E5%A4%A9%E8%87%AA%E5%8A%A8%E5%A4%87%E4%BB%BD%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">1.6.2.</span> <span class="nav-text">每天自动备份数据库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%81%A2%E5%A4%8D%E5%A4%87%E4%BB%BD%E6%95%B0%E6%8D%AE%E5%BA%93"><span class="nav-number">1.6.3.</span> <span class="nav-text">恢复备份数据库</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Nginx-%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE"><span class="nav-number">1.6.4.</span> <span class="nav-text">Nginx 反向代理外网访问</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%9F%E5%90%8D%E5%86%85%E7%BD%91%E8%AE%BF%E9%97%AE%E8%B5%B0%E5%86%85%E7%BD%91"><span class="nav-number">1.6.5.</span> <span class="nav-text">域名内网访问走内网</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E5%A4%8D%E6%9B%B4%E6%8D%A2%E5%A4%B4%E5%83%8F-Bug"><span class="nav-number">1.6.6.</span> <span class="nav-text">修复更换头像 Bug</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="WoodenRobot"
+      src="/uploads/8bit.png">
+  <p class="site-author-name" itemprop="name">WoodenRobot</p>
+  <div class="site-description" itemprop="description">Life is short, should be fun!</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">65</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">35</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Wooden-Robot" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Wooden-Robot" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://www.zhihu.com/people/woodenrobot" title="知乎 → https:&#x2F;&#x2F;www.zhihu.com&#x2F;people&#x2F;woodenrobot" rel="noopener" target="_blank"><i class="fab fa-zhihu fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/WoodenRobot_" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;WoodenRobot_" rel="noopener" target="_blank"><i class="fab fa-twitter fa-fw"></i></a>
+      </span>
+  </div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      友情链接
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://laike9m.com/" title="https:&#x2F;&#x2F;laike9m.com&#x2F;" rel="noopener" target="_blank">laike9m</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://www.kawabangga.com/" title="https:&#x2F;&#x2F;www.kawabangga.com&#x2F;" rel="noopener" target="_blank">卡瓦邦噶！</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://xiaozhou.net/" title="https:&#x2F;&#x2F;xiaozhou.net&#x2F;" rel="noopener" target="_blank">Timothy</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://blog.flytrap.top/" title="http:&#x2F;&#x2F;blog.flytrap.top&#x2F;" rel="noopener" target="_blank">俗子</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="http://jalan.space/" title="http:&#x2F;&#x2F;jalan.space&#x2F;" rel="noopener" target="_blank">忘归</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://liriansu.com/" title="https:&#x2F;&#x2F;liriansu.com&#x2F;" rel="noopener" target="_blank">浮云计算</a>
+        </li>
+        <li class="links-of-blogroll-item">
+          <a href="https://wzmmmmj.com/" title="https:&#x2F;&#x2F;wzmmmmj.com&#x2F;" rel="noopener" target="_blank">ZmJ</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">WoodenRobot</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">154k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">2:20</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  <meta name="referrer" content="no-referrer-when-downgrade">
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+  <div style="display: none;">
+    <script src="//s95.cnzz.com/z_stat.php?id=1262047333&web_id=1262047333"></script>
+  </div>
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://woodenrobot.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://woodenrobot.me/2018/09/08/Ubuntu-%E6%90%AD%E5%BB%BA-Seafile/";
+    this.page.identifier = "2018/09/08/Ubuntu-搭建-Seafile/";
+    this.page.title = "Ubuntu 搭建 Seafile";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://woodenrobot.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '832506ead7b9447f7500',
+      clientSecret: '3ef8bce62c4a14643c68cc118918ce7715ea1208',
+      repo        : 'gitalk',
+      owner       : 'woodenrobot-gitalk',
+      admin       : ['Wooden-Robot'],
+      id          : 'd30fcdba5e012332b0889836e214bb9a',
+        language: '',
+      distractionFreeMode: true
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
+
+</body>
+</html>
